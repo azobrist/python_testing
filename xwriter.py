@@ -11,19 +11,19 @@ sh1 = bk.add_worksheet('stats')
 graph_iteration = 0
 graph_size = 15
 
-with open(filename,'r') as tsvf:
-	data = csv.reader(tsvf,delimiter='\t')
+with open(filename,'r') as csvf:
+	data = csv.reader(csvf,delimiter=',')
 	cnt=0
 	for row in data:
-		col=0
-		for i in row:
-			sh.write(cnt,col,float(i))
-			col+=1
-		cnt+=1
+            col=0
+            for i in row:
+                sh.write(cnt,col,float(i))
+                col+=1
+            cnt+=1
 
 def add_chart_vert(name,data_col_str,graph_col_str):
 	cnt = graph_iteration
-	vst = '=raw_data!$X$1:$X$1000'.replace('X',data_col_str)
+	vst = '=raw_data!$X$1:$X$200'.replace('X',data_col_str)
 	#sh = bk.add_worksheet('stats')
 	ch = bk.add_chart({'type': 'line'})
 	ch.add_series({

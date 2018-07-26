@@ -31,8 +31,8 @@ for i in range(len(sys.argv)-1):
 	for i in range(len(sh_compile)):
 		sh_compile[i].write(0,num-1,hdr_str)
 
-	with open(filename,'r') as tsvf:
-		data = csv.reader(tsvf,delimiter='\t')
+	with open(filename,'r') as csvf:
+		data = csv.reader(csvf,delimiter=',')
 		cnt=0
 		for row in data:
 			col=0
@@ -47,9 +47,31 @@ for i in range(len(sys.argv)-1):
 sh = bk_compile.add_worksheet('Vpp vs Dia')
 
 for x in range(7):
-	for i in range(7):
-		vst = '=_xlfn.AVERAGE(sensor{0}!X2:X1001)'.format(x+1).replace('X',chr(ord('A')+i))
-		cst = chr(ord('A')+i)+str(1+x)
-		sh.write_formula(cst,vst)
+	for ch in range(7):
+                vst = '=AVERAGE(sensor{0}!{1}2:{1}201)'.format(ch+1,chr(ord('A')+x))
+                cst = chr(ord('A')+ch)+str(1+x)
+                sh.write_formula(cst,vst)
+                vst = '={2}{0}-{2}{1}'.format(ch+1,ch+2,chr(ord('A')+x))
+                cst = '{1}{0}'.format(ch+9,chr(ord('A')+x))
+                sh.write_formula(cst,vst)
+                vst = '={0}{1}/($I{2}-$I{3})'.format(chr(ord('A')+ch),9+x,2+x,1+x)
+                cst = '{0}{1}'.format(chr(ord('A')+ch),17+x)
+                sh.write_formula(cst,vst)
+                vst = '=_xlfn.STDEV.S(sensor{0}!{1}2:{1}201)'.format(ch+1,chr(ord('A')+x))
+                cst = '{0}{1}'.format(chr(ord('A')+ch),25+x)
+                sh.write_formula(cst,vst)
+    
+d = [11.99,15.38,20.7,26.64,34.69,40.63,51.99]
+for i in range(len(d)):
+	vst = str(d[i])
+	cst = 'I'+str(1+i)
+	sh.write(cst,vst)
+	vst = '=(I{0}/2)^2*PI()'.format(i+1)
+	cst = 'J'+str(1+i)
+	sh.write_formula(cst,vst)
+
+vst = '=1/(A1*275)'.format(i+1)
+cst = 'K1'
+sh.write_formula(cst,vst)
 
 bk_compile.close()

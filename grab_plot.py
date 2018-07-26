@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gsc
 import serial
 from time import sleep
+import subprocess as sp
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -19,44 +20,53 @@ y5 = []
 y6 = []
 y7 = []
 
-filename = sys.argv[1]
+name = sys.argv[1]
 
-ser = serial.Serial(
-    port='/dev/ttyUSB0',\
-    baudrate=115200,\
-    parity=serial.PARITY_NONE,\
-    stopbits=serial.STOPBITS_ONE,\
-    bytesize=serial.EIGHTBITS,\
-    timeout=0)
+try:
+    ser = serial.Serial(
+        port='/dev/ttyUSB0',\
+        baudrate=115200,\
+        parity=serial.PARITY_NONE,\
+        stopbits=serial.STOPBITS_ONE,\
+        bytesize=serial.EIGHTBITS)
 
-print("connected to: " + ser.portstr)
+    print("connected to: " + ser.portstr)
+    ser.flushInput()
+except:
+    print("enable to connect to serial...")
+    serial.Serial().flushInput()
+    serial.Serial().close()
+    exit()
 
-def grab_1000(session,name,test):
-    filename = "s{0}_{1}_{2}".format(session,name,get_size(test))
+def grab_1000(session,filename,test):
+    ser.flushInput()
     with open(filename, 'w') as tsvf:
         tw = csv.writer(tsvf, delimiter=',')
         row = 0
         nl = False
         while nl == False:
-            if len(ser.readline()) == 102:
+            b=ser.readline()
+            print("waiting for 102 before nl: {0}".format(len(b)))
+            if len(b) >= 100:
                 nl = True
             sleep(1)
-        while row < 100:
+        while row < 200:
             reading = ser.readline()
-            print(reading.decode().split('\t'),row)
             data=reading.decode().split('\t')
-            data[15]=data[15].replace("\r\n","")
-            tw.writerow(data)
-            y1.append(float(data[8]))
-            y2.append(float(data[9]))
-            y3.append(float(data[10]))
-            y4.append(float(data[11]))
-            y5.append(float(data[12]))
-            y6.append(float(data[13]))
-            y7.append(float(data[14]))
-            row+=1
+            print(data,row,len(data))
+            if len(data) == 16:
+                data[15]=data[15].replace("\r\n","")
+                tw.writerow(data)
+                y1.append(float(data[8]))
+                y2.append(float(data[9]))
+                y3.append(float(data[10]))
+                y4.append(float(data[11]))
+                y5.append(float(data[12]))
+                y6.append(float(data[13]))
+                y7.append(float(data[14]))
+                row+=1
             sleep(0.05)
-    x = list(range(1,101))
+    x = list(range(1,201))
     fig = plt.figure(figsize=(22,12), dpi=80)
     fig_size = plt.rcParams["figure.figsize"]
     gs = gsc.GridSpec(7,1)
@@ -90,16 +100,22 @@ def get_size(x):
     return switcher.get(x, lambda: "Invalid entry")
 
 session = input("Enter session number: ")
-tests = input("Enter number of tests: ")
-for i in range(int(tests)):
+start = input("Enter test number to start(0:12mm, 1:15,2:20,3:26,4:35,5:40,6:50): ")
+for i in range(int(start),7):
     size = get_size(i)
     input("Place in {0} tube,enter to continue...".format(size))
     good_data=False
     while good_data == False:
+        filename = "s{0}_{2}_{1}".format(session,name,get_size(i))
         grab_1000(session,filename,i)
         yn = input("Good data? (y/n): ")
         if yn == "y":
-            good_data=True
+            try:
+                sp.call(["./xwriter.py",filename])
+                good_data=True
+            except:
+                print("Data bad, retrying...")
+                input("Place in {0} tube,enter to continue...".format(size))
         y1.clear()
         y2.clear()
         y3.clear()
